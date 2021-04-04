@@ -1,0 +1,225 @@
+* Pattern Matching
+** Why Pattern Matching?
+*** Bret Victor jumps from text-only syntax to full-blown graphics, but there is something in between   
+*** pattern matching neatly lassos a portion of programming - makes programming tasks smaller
+*** history is embedded in streams, pattern matchers walk the streams and invoke actions ; f(t)
+*** pattern matching has been around a long time, aka "parsers" in compiler technology
+*** pattern matching is being "discovered" by FP (functional programming <= DSLs for types)
+** Why PEG?
+*** light weight
+*** much easier to use than YACC
+*** REGEX-like DSL for patterns
+*** backtracking
+    exhaustive search
+    backtracking was verbotten in 19xx's due to efficiency concerns
+** PEG vs REGEX
+*** PEG is "better" than REGEX
+*** PEG allows programmers to define callable sub-matcher rules
+*** PEG is recursive, REGEX is flat
+** PEG vs YACC (+LEX)
+*** PEG creates top-down parsers
+*** YACC creates bottom-up language definitions
+*** YACC needs a lexer (e.g. LEX)
+*** PEG doesn't need a separate lexer   
+** PEG libraries
+*** Racket
+    (require peg), or
+    #lang peg
+    https://guitarvydas.github.io/2021/03/19/Racket-PEG.html
+*** Common Lisp
+    ESRAP
+*** JavaScript
+    Ohm-JS
+    peg.js
+    etc.
+*** Others
+    https://bford.info/packrat/
+    etc., etc.
+** Why Ohm?
+*** What Makes Ohm Better Than Other PEGs?
+**** pattern matching DSL remains pure - not soiled by programming details
+**** Ohm-Editor
+***** Huge advantage for rapid development of grammars
+***** A new way to think about problem solving
+* Ohm Editor
+** Ohm Editor
+*** Why?
+**** Editing a grammar manually can take about 1 day
+***** Whitespace is often the issue (a minor detail, but a detail nonetheless)
+**** Editing a grammar in Ohm Editor takes 10's of minutes
+**** Newbies
+     Ohm Editor elides details
+     Allows one to concentrate on pattern matching
+**** Experienced Architects
+     DI (Design Intent) is unspoiled when using Ohm
+     Ohm Editor allows the easy part to remain easy, less manual debugging
+** Ohm Editor Default
+*** default
+   url https://ohmlang.github.io/editor/
+   pull down menu and select "arithmetic"
+*** 4 frames
+**** Grammar (pattern match dsl)
+**** Examples (test cases)
+**** input text (one line in middle)
+**** CST (concrete parse tree of text, aka AST) (bottom frame)
+** Errors
+*** error in grammar
+*** error during parse
+** A Real Example - SVG matching
+*** SVG grammar
+    (https://github.com/guitarvydas/svgtranspile/blob/main/svg.ohm)
+ HTMLSVG {
+   htmlsvg = ws* docTypeHeader htmlHeader bodyHeader element+ bodyEnd htmlEnd
+   htmlHeader = "<html>" ws*
+   htmlEnd = "</html>" ws*
+   bodyHeader = "<body>" ws*
+   bodyEnd = "</body>" ws*
+   docTypeHeader = "<!DOCTYPE" stuff* ">" ws* 
+
+   element = svgElement | rectElement | textElement | basicElement
+   svgElement = "<" "svg" ws* attribute* ">" ws* element* text* "</" "svg" ">" ws*
+   rectElement = "<" "rect" ws* attribute* ">" ws* element* text* "</" "rect" ">" ws*
+   textElement = "<" "text" ws* attribute* ">" ws* element* text* "</" "text" ">" ws*
+   basicElement = "<" name ws* attribute* ">" ws* element* text* "</" name ">" ws*
+
+   attribute =  widthAttribute | heightAttribute | xAttribute | yAttribute | fillAttribute
+              | genericAttribute
+   widthAttribute = "width" "=" string ws*
+   heightAttribute = "height" "=" string ws*
+   xAttribute = "x" "=" string ws*
+   yAttribute = "y" "=" string ws*
+   fillAttribute = "fill" "=" string ws*
+   genericAttribute = name "=" string ws*
+
+   text = stuff
+   name = name1st nameFollow*
+   name1st = "a" .. "z" | "A" .. "Z"
+   nameFollow = "0" .. "9" | name1st
+
+   stuff = ~">" ~"/>" ~"<" ~"?>" any
+
+   string = "\"" notQ* "\""
+   notQ = ~"\"" any
+   ws = " " | "\n" | "\t"
+ }
+
+*** Test.svg
+    (https://github.com/guitarvydas/svgtranspile/edit/main/test.svg)
+ <!DOCTYPE html>
+ <html>
+ <body>
+
+ <svg xmlns="http://www.w3.org/2000/svg" width="600" height="510">
+   <rect width="200" height="100" fill="lightyellow" style="stroke-width:1;stroke:black" ></rect>
+     <text x="100" y="55" fill="black">output</text>
+     <text x="300" y="55" fill="black">floating</text>
+
+   Sorry, your browser does not support inline SVG.  
+ </svg>
+ 
+ </body>
+ </html>
+
+*** Actions triggered by parse tree
+**** ohm parser (grammar, text) -> { parser, parse_tree }
+     parser.addSemantics (...)
+     parser.createSemantics () --> semantics_object
+**** tree walker invokes actions 
+     semantics_object (parse_tree).operation (...)
+**** Semantic Actions
+     addSemantics (semantics-object, {'<operation-name>', func, func, ... func})
+       one function for each grammar rule
+       args of semantics functions must match with grammar rule
+       capture of sub-matches passed from parser as args to semantic functions
+       (see below for more details)
+
+*** Further
+    https://guitarvydas.github.io/2021/03/18/Little-Language.html
+** github
+   https://github.com/guitarvydas/ohm-editor
+* PROLOG for Programmers
+** using: https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_15.html
+** Declarative <== Relational
+** PROLOG == Relational
+** miniKanren == Relational
+
+** figure
+ [[./f2_15.gif][figure]]
+** factbase
+ edge(1,2).
+ edge(1,4).
+ edge(1,3).
+ edge(2,3).
+ edge(2,5).
+ edge(3,4).
+ edge(3,5).
+ edge(4,5).
+** basic relation
+ connected(X,Y) :- edge(X,Y).
+ connected(X,Y) :- edge(Y,X).
+** alternate basic relation
+ connected(X,Y) :- edge(X,Y) ; edge(Y,X).
+** inferring connections
+*** Divide and Conquer
+**** do-it style
+***** top level
+ path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
+***** base case
+ inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
+***** recursive case
+ inferPath(A,B,PriorPath,ResultPath) :-
+	connected(A,C),           
+	C \== B,
+	\+member(C,PriorPath),
+	NewPath = [ C | PriorPath ],
+	inferPath(C,B,NewPath,ResultPath).  
+
+**** PROLOGify - Better Relations
+***** top level
+ path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
+ ---> 
+ path(A,B,Path) :- inferPath(A,B,[A],Path).
+***** base case
+ inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
+ --->
+ inferPath(A,B,P,[B|P]) :- connected(A,B).
+***** recursive case
+ inferPath(A,B,PriorPath,ResultPath) :-
+	connected(A,C),           
+	C \== B,
+	\+member(C,PriorPath),
+	NewPath = [ C | PriorPath ],
+	inferPath(C,B,NewPath,ResultPath).  
+ --->
+ inferPath(A,B,Visited,Path) :-
+	connected(A,C),           
+	C \== B,
+	\+member(C,Visited),
+	inferPath(C,B,[C|Visited],Path).  
+
+
+       
+** SWIPL at command line
+   > swipl
+   ?- consult(path).
+   ?- path(5,1,R).
+   ?- halt.
+** SWIPL in Bash script
+   #!/bin/bash
+   swipl -q \
+       -g 'consult(path)' \
+       -g 'use_module(library(http/json))' \
+       -g 'bagof(R,path(5,1,R),B),write(B),nl.' \
+       -g 'halt'
+** SWIPL with JSON
+   #!/bin/bash
+   swipl -q \
+       -g 'consult(path)' \
+       -g 'use_module(library(http/json))' \
+       -g 'bagof(R,path(5,1,R),B),json_write(user_output,B),nl.' \
+       -g 'halt'
+  
+  
+       
+
+
