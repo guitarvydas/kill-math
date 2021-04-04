@@ -1,7 +1,11 @@
+   https://github.com/guitarvydas/kill-math
+
 * Pattern Matching
 ** Why Pattern Matching?
+*** Progamming consists, broadly, of 2 activities
+**** input and match
+**** rearrange and output
 *** Bret Victor jumps from text-only syntax to full-blown graphics, but there is something in between   
-*** pattern matching neatly lassos a portion of programming - makes programming tasks smaller
 *** history is embedded in streams, pattern matchers walk the streams and invoke actions ; f(t)
 *** pattern matching has been around a long time, aka "parsers" in compiler technology
 *** pattern matching is being "discovered" by FP (functional programming <= DSLs for types)
@@ -138,67 +142,10 @@
 ** github
    https://github.com/guitarvydas/ohm-editor
 * PROLOG for Programmers
-** using: https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_15.html
-** Declarative <== Relational
-** PROLOG == Relational
-** miniKanren == Relational
-
-** figure
- [[./f2_15.gif][figure]]
-** factbase
- edge(1,2).
- edge(1,4).
- edge(1,3).
- edge(2,3).
- edge(2,5).
- edge(3,4).
- edge(3,5).
- edge(4,5).
-** basic relation
- connected(X,Y) :- edge(X,Y).
- connected(X,Y) :- edge(Y,X).
-** alternate basic relation
- connected(X,Y) :- edge(X,Y) ; edge(Y,X).
-** inferring connections
-*** Divide and Conquer
-**** do-it style
-***** top level
- path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
-***** base case
- inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
-***** recursive case
- inferPath(A,B,PriorPath,ResultPath) :-
-	connected(A,C),           
-	C \== B,
-	\+member(C,PriorPath),
-	NewPath = [ C | PriorPath ],
-	inferPath(C,B,NewPath,ResultPath).  
-
-**** PROLOGify - Better Relations
-***** top level
- path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
- ---> 
- path(A,B,Path) :- inferPath(A,B,[A],Path).
-***** base case
- inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
- --->
- inferPath(A,B,P,[B|P]) :- connected(A,B).
-***** recursive case
- inferPath(A,B,PriorPath,ResultPath) :-
-	connected(A,C),           
-	C \== B,
-	\+member(C,PriorPath),
-	NewPath = [ C | PriorPath ],
-	inferPath(C,B,NewPath,ResultPath).  
- --->
- inferPath(A,B,Visited,Path) :-
-	connected(A,C),           
-	C \== B,
-	\+member(C,Visited),
-	inferPath(C,B,[C|Visited],Path).  
-
-
-       
+** Why PROLOG?
+   DSL for searching and pattern matching
+   triples
+   JSON
 ** SWIPL at command line
    > swipl
    ?- consult(path).
@@ -220,6 +167,65 @@
        -g 'halt'
   
   
+** PROLOG - Relational Notation
+*** using: https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_15.html
+*** Declarative <== Relational
+*** PROLOG == Relational
+*** miniKanren == Relational
+
+*** figure
+  [[./f2_15.gif][figure]]
+*** factbase
+  edge(1,2).
+  edge(1,4).
+  edge(1,3).
+  edge(2,3).
+  edge(2,5).
+  edge(3,4).
+  edge(3,5).
+  edge(4,5).
+*** basic relation
+  connected(X,Y) :- edge(X,Y).
+  connected(X,Y) :- edge(Y,X).
+*** alternate basic relation
+  connected(X,Y) :- edge(X,Y) ; edge(Y,X).
+*** inferring connections
+**** Divide and Conquer
+***** do-it style
+****** top level
+  path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
+****** base case
+  inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
+****** recursive case
+  inferPath(A,B,PriorPath,ResultPath) :-
+	 connected(A,C),           
+	 C \== B,
+	 \+member(C,PriorPath),
+	 NewPath = [ C | PriorPath ],
+	 inferPath(C,B,NewPath,ResultPath).  
+
+***** PROLOGify - Better Relations
+****** top level
+  path(A,B,Path) :- BasicPath = [A], inferPath(A,B,BasicPath,Path).
+  ---> 
+  path(A,B,Path) :- inferPath(A,B,[A],Path).
+****** base case
+  inferPath(A,B,P,ResultPath) :- connected(A,B), ResultPath = [B|P].
+  --->
+  inferPath(A,B,P,[B|P]) :- connected(A,B).
+****** recursive case
+  inferPath(A,B,PriorPath,ResultPath) :-
+	 connected(A,C),           
+	 C \== B,
+	 \+member(C,PriorPath),
+	 NewPath = [ C | PriorPath ],
+	 inferPath(C,B,NewPath,ResultPath).  
+  --->
+  inferPath(A,B,Visited,Path) :-
+	 connected(A,C),           
+	 C \== B,
+	 \+member(C,Visited),
+	 inferPath(C,B,[C|Visited],Path).  
+
+
        
-
-
